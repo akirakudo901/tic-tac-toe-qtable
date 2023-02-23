@@ -1,0 +1,6 @@
+Akira Kudo 2023/02/23
+
+Todos:
+1) Double check if minimax computer is generating the true minimax which wins every time.
+-> To do so, make a little program that allows playing against a computer of choice and play?
+2) See if my Q learning algorithm is implemented correctly, and if not, check what's wrong

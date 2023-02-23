@@ -6,8 +6,8 @@ Created on Thu Jan 13 19:26:19 2022
 """
 
 from math import inf
-from tictactoeai import tictactoeenvironment as tttenv
-from tictactoeai.qtable import state_to_number
+import environment as tttenv
+from qtable import state_to_number
 import copy
 import json
 import random as rd
@@ -16,10 +16,11 @@ from time import localtime, time
 P_INF = inf
 N_INF = -inf
 
-EMPTY  = e = 0
-CIRCLE = o = 1
-CROSS  = x = 2
+EMPTY  = E = tttenv.EMPTY
+CIRCLE = O = tttenv.CIRCLE
+CROSS  = X = tttenv.CROSS
 
+LOOKUP_TABLE_PATH = "tictactoeai/qtable/minimax_lookup_table_Tictactoe2023_2_23_14_49.json"
 
 class Node():
     def __init__(self, state, reward, best_action, children):
@@ -27,14 +28,26 @@ class Node():
         self.reward = reward
         self.best_action = best_action
         self.children = children
+    
+    def __str__(self):
+        def _child_state_to_string(child):
+            acc = "["; [acc := acc + str(x) + ", " for x in child.state]; acc += "]"
+            return acc
+
+        def _children_to_string(children):
+            acc = "\n"; [acc := acc + str(key) + " : " + _child_state_to_string(children[key]) + "\n" 
+                            for key in children.keys()]
+            return acc
+        
+        return ("State:" + _child_state_to_string(self) + "\nreward:" + str(self.reward) + 
+                "\nbest action:" + str(self.best_action) + 
+                "\nchildren:" + _children_to_string(self.children))
 
 
-env = tttenv.TicTacToe()
-
-initial = Node([0]*9, N_INF, [], {})
-node1 = Node([o,x,o,
-              x,o,x,
-              e,e,e], N_INF, [], {})
+initial = Node([E]*9, N_INF, [], {})
+node1 = Node([O,X,O,
+              X,O,X,
+              E,E,E], N_INF, [], {})
 
 def state_tree(n0):
     """
@@ -52,23 +65,21 @@ def state_tree(n0):
     initial_turn = tttenv.get_turn(n0.state)
     
     def get_reward(n, a):
-        copy_n = copy.deepcopy(n)  #making a copy so that old 
-                                   #node is not updated through step()
-        env.set_state(copy_n.state)  #update env to apply env.step()
-        win_r  = env.reward_for_win
-        loss_r = env.reward_for_loss
+        copy_n = Node(n.state, n.reward, n.best_action, n.children)
+        win_r  = tttenv.REWARD_FOR_WIN
+        loss_r = tttenv.REWARD_FOR_LOSS
         i_t = initial_turn
         
-        new_state, g_r, _, _ = env.step(a)
+        new_state, g_r, _, _ = tttenv.TicTacToe.simulate_step(n.state, a)
         #WIN & circle / LOSS & cross  ->  1
         #WIN & cross  / LOSS & circle -> -1
         #s is win
-        if (((g_r == win_r) and (i_t == CIRCLE)) 
-                or ((g_r == loss_r) and (i_t == CROSS))):
+        if ((g_r is win_r and i_t is CIRCLE) 
+                or (g_r is loss_r and i_t is CROSS)):
             return 1
         #s is loss
-        elif (((g_r == win_r) and (i_t == CROSS)) 
-                or ((g_r == loss_r) and (i_t == CIRCLE))):
+        elif ((g_r is win_r and i_t is CROSS) 
+                or (g_r is loss_r and i_t is CIRCLE)):
             return -1
         #s is draw
         elif (EMPTY not in new_state):
@@ -97,8 +108,7 @@ def state_tree(n0):
                 first, second, third = L[0], L[1], L[2]
                 if (s[first] == s[second] == s[third] != EMPTY):
                     return True
-                else:
-                    pass
+                
             return False
     
     def children_nodes(n):
@@ -106,10 +116,8 @@ def state_tree(n0):
         children = {}
         
         for a in empty_spots:
-            s = copy.deepcopy(n.state)
-            env.set_state(s)
-            n_s, _, _, _ = env.step(a)
-            new_node = Node(n_s, get_reward(n, a), 99, {})
+            n_s, _, _, _ = tttenv.TicTacToe.simulate_step(n.state, a)
+            new_node = Node(n_s, get_reward(n, a), 9999, {})
             if not is_terminal(new_node):
                 new_node.children = children_nodes(new_node)
             
@@ -129,26 +137,23 @@ def state_tree(n0):
         action = []
         for act in n.children.keys():
             child = n.children[act]
-            if is_terminal(child):
-                if is_ally and reward <= child.reward:
-                    #maximize
-                    reward = child.reward
-                    action.append(act)
-                elif not is_ally and reward >= child.reward:
-                    #minimize
-                        reward = child.reward
-                        action.append(act)
-            else: #not terminal
-                calibrated_child = calibrate_tree(child)
-                n.children[act] = calibrated_child
-                if is_ally and reward <= calibrated_child.reward:
-                    #maximize
-                        reward = calibrated_child.reward
-                        action.append(act)
-                elif not is_ally and reward >= calibrated_child.reward:
-                    #minimize
-                        reward = calibrated_child.reward
-                        action.append(act)
+            # if not terminal
+            if not is_terminal(child):
+                #adjust whole tree below node first
+                child = calibrate_tree(child)
+                n.children[act] = child
+            #then update node's reward
+            # if action is bigger than before
+            if is_ally and reward < child.reward:
+                #maximize
+                reward = child.reward
+                action = [act]
+            elif not is_ally and reward > child.reward:
+                #minimize
+                reward = child.reward
+                action = [act]
+            elif reward == child.reward: # then reward is the same as our current best
+                action.append(act)
             
         return reward, action
     
@@ -162,7 +167,7 @@ def state_tree(n0):
         1) Turn is enemy -> reward is smaller than current. Reward to new, action to new.
         2) Turn is ally  -> reward is bigger. reward & action updated.
         """
-        
+
         turn = tttenv.get_turn(n.state)
         if turn == initial_turn:
             is_ally = True
@@ -190,22 +195,23 @@ def tree_to_dict(tree):
     a dictionary with state_number as keys and best action as values.
     """
     
-    def node_to_dict(n, table):
+    def _node_to_dict(n, table):
         state_num = state_to_number(n.state)
         table[state_num] = n.best_action
         for child in n.children.values():
-            table = node_to_dict(child, table)
+            table = _node_to_dict(child, table)
         return table
     
     table = {}
-    data = node_to_dict(tree, table)
+    data = _node_to_dict(tree, table)
     
     time_tuple = localtime(time())[0:5]
     acc = str(time_tuple[0]); [acc := acc + "_" + str(x) for x in time_tuple[1:5]]
     name_original = "minimax_lookup_table_Tictactoe" + acc + ".json"
     success = False
+
     while success == False:
-        inp = input("Do you want to keep this data as a JSON file? YES/NO")
+        inp = input("Do you want to keep this data as a JSON file? YES/NO \n")
         if inp == "YES":
             with open(name_original, "w") as write_file:
                 json.dump(data, write_file)
@@ -218,7 +224,7 @@ def tree_to_dict(tree):
 
 
 class Minimax_computer:
-    def __init__(self, lookup_table="minimax_lookup_table_Tictactoe2022_1_18_11_0.json"):
+    def __init__(self, lookup_table=LOOKUP_TABLE_PATH):
         success = False
         while not success:
             if not lookup_table.endswith(".json"):
@@ -241,24 +247,26 @@ class Minimax_computer:
         while p < 0 or p > 1:
             p = input("The given probability is invalid. Please input a value between 0 and 1.")
                 
-        def random_choice():
+        def _random_choice():
             empties = []
             for i in range(9):
-                if state[i] == 1:
+                if state[i] == EMPTY: 
                     empties.append(i)
             return rd.sample(empties, 1)[0]
         
-        def optimal_choice():
+        def _optimal_choice():
             state_number = state_to_number(state)
             a = rd.sample(self.table[str(state_number)], 1)[0]
             return a
         
         random_val = rd.random()
         if p > random_val:
-            result = random_choice()
+            result = _random_choice()
+            is_random_choice = True
         else:
-            result = optimal_choice()
-        return result
+            result = _optimal_choice()
+            is_random_choice = False
+        return result, is_random_choice
 
     def load(self, lookup_table="minimax_lookup_table_Tictactoe2022_1_18_11_0.json"):
         success = False
@@ -276,6 +284,7 @@ class Minimax_computer:
         print("Load of lookup table successful.")
         
 
-#if __name__ == "__main__":
-    #st = state_tree(initial)
-    #tree_to_dict(st)
+# Creating a tree of Q table
+# if __name__ == "__main__":
+#     st = state_tree(initial)
+#     tree_to_dict(st)

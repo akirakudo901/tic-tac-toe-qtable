@@ -20,16 +20,16 @@ def log(Q, save_table=False, name=""):
             np.save(name_original, Q)
         else:
             np.save(name, Q)
-    elif save_table is False:
-        pass
     
 def state_to_number(s):
     """
     Each state will be given a unique number in the following way:
      Putting the ith number in the state list as ni, a state's unique number
      will be calculated as:
-       number = SUM(ni * 3^(9-i)) for (0<i<9)
+       number = SUM(ni * 3^(8-i)) for (0<=i<9)
        E.g. [0,1,0,2,2,0,0,1,0] = 1(3^7) + 2(3^5) + 2(3^4) + 1(3^1) = 2838
+
+    Value will remain between 0 and 19682, inclusive.
     """
     result = 0
     for i in range(9):
