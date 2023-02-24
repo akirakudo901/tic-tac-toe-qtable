@@ -16,9 +16,6 @@ EMPTY  = e = 0
 CIRCLE = o = 1
 CROSS  = x = 2
 
-PRINT_EVERY_N_EPISODES = 1000
-
-
 # 1. Load Environment and Q-table structure
 env = environment.TicTacToe()
 minimax_comp = minimax.Minimax_computer()
@@ -28,7 +25,8 @@ Q = np.zeros([environment.OBSERVATION_SPACE_SIZE, environment.ACTION_SPACE_SIZE]
 # 2. Parameters of Q-learning
 eta = .628    #learning rate
 gma = .8  #.9 #discount rate for future actions
-epis = 10001 #number of episodes
+epis = 50001 #number of episodes
+print_every_n_episodes = epis // 10
 
 #probability by which the ai agent explores a new action; epsilon-greedy 
 initial_epsilon = 0.95 
@@ -47,7 +45,7 @@ rev_list = [] # rewards per episode calculate
 # Result is actually way better!!!
 
 for i in range(epis):
-    in_printed_episode = (i % PRINT_EVERY_N_EPISODES == 0)
+    in_printed_episode = (i % print_every_n_episodes == 0)
 
     if in_printed_episode:
         print("+++++++++++++++++++++++++++++++++")
