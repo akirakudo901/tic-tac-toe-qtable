@@ -12,12 +12,12 @@ import numpy as np
 import random
 
 
-EMPTY  = e = 0
-CIRCLE = o = 1
-CROSS  = x = 2
+EMPTY  = E = environment.EMPTY
+CIRCLE = O = environment.CIRCLE
+CROSS  = X = environment.CROSS
 
 # 1. Load Environment and Q-table structure
-env = environment.TicTacToe()
+env = environment.Tictactoe()
 minimax_comp = minimax.Minimax_computer()
 
 Q = np.zeros([environment.OBSERVATION_SPACE_SIZE, environment.ACTION_SPACE_SIZE])
@@ -68,7 +68,7 @@ for i in range(epis):
         qtable.log(Q)
         s_num = qtable.state_to_number(s)
         j+=1
-        empty_spots = environment.get_empty_squares(s)
+        empty_spots = environment.Tictactoe.get_empty_squares(s)
         if in_printed_episode: print("empty_spots", empty_spots)
                 
         # Choose action from Q table

@@ -25,7 +25,7 @@ REWARD_FOR_ERROR = -5
 REWARD_FOR_ONGOING = 0
 
 
-class TicTacToe:
+class Tictactoe:
     
     def __init__(self, r_win=REWARD_FOR_WIN, r_loss=REWARD_FOR_LOSS, 
                  r_draw=REWARD_FOR_DRAW, r_error=REWARD_FOR_ERROR, 
@@ -59,30 +59,11 @@ class TicTacToe:
             new_state = []
             for i in state:
                 new_state.append(i) 
-            new_state[action] = get_turn(state) 
+            new_state[action] = Tictactoe.get_turn(state) 
             return new_state
         
-        def _at_least_one_line_is_full_with(s, mark):
-            lines = ((0,1,2), (3,4,5), (6,7,8),
-                     (0,3,6), (1,4,7), (2,5,8),
-                     (0,4,8), (2,4,6))
-            
-            for L in lines:
-                first, second, third = L[0], L[1], L[2]
-                if s[first] == s[second] == s[third] == mark:
-                    return True
-    
-            return False
-        
         def _get_end_condition(s):
-            if _at_least_one_line_is_full_with(s, CIRCLE):
-                end_condition = CIRCLE
-            elif _at_least_one_line_is_full_with(s, CROSS):
-                end_condition = CROSS
-            elif EMPTY not in s:
-                end_condition = DRAW
-            else:
-                end_condition = ONGOING
+            _, end_condition = Tictactoe.is_terminal(s)
             return end_condition
         
         def _get_reward(turn, end_condition):
@@ -97,7 +78,7 @@ class TicTacToe:
             elif end_condition is ONGOING:
                 return r_ongoing
             
-        turn = get_turn(state)
+        turn = Tictactoe.get_turn(state)
 
         if _chosen_square_is_empty():
             new_state = _update_state()
@@ -112,7 +93,7 @@ class TicTacToe:
 
 
     def step(self, action):
-        n_s, r, d, e_c = TicTacToe.simulate_step(self.state, action,
+        n_s, r, d, e_c = Tictactoe.simulate_step(self.state, action,
                                                 r_win=self.reward_for_win,   r_loss=self.reward_for_loss, 
                                                 r_draw=self.reward_for_draw, r_error=self.reward_for_error, 
                                                 r_ongoing=self.reward_when_not_done)
@@ -130,30 +111,62 @@ class TicTacToe:
             elif n == CROSS:
                 return "x"
             
-        print_board(list(map(_convert_number_to_mark, self.state)))
+        Tictactoe.print_board(list(map(_convert_number_to_mark, self.state)))
     
     def set_state(self, state):
         self.reset()
         self.state = state
 
+    #Other functions useful on tic tac toe board states
+    @staticmethod
+    def get_empty_squares(state):
+        result = []
+        for i in range(9):
+            if state[i] is EMPTY:
+                result.append(i)
+        return result
 
-#Other functions useful on tic tac toe board states
-def get_empty_squares(state):
-    result = []
-    for i in range(9):
-        if state[i] is EMPTY:
-            result.append(i)
-    return result
+    @staticmethod
+    def get_turn(state):
+        if len(Tictactoe.get_empty_squares(state)) % 2 == 0:
+            return CROSS
+        else:
+            return CIRCLE
 
-def get_turn(state):
-    if len(get_empty_squares(state)) % 2 == 0:
-        return CROSS
-    else:
-        return CIRCLE
+    @staticmethod    
+    def print_board(b):
+        print("_______")
+        print("|" + b[0] + "|" + b[1] + "|" + b[2] + "|")
+        print("|" + b[3] + "|" + b[4] + "|" + b[5] + "|")
+        print("|" + b[6] + "|" + b[7] + "|" + b[8] + "|")
+        print("-------")
+
+    @staticmethod
+    def is_terminal(state):
+        def _at_least_one_line_is_full_with(s, mark):
+            lines = ((0,1,2), (3,4,5), (6,7,8),
+                     (0,3,6), (1,4,7), (2,5,8),
+                     (0,4,8), (2,4,6))
+            
+            for L in lines:
+                first, second, third = L[0], L[1], L[2]
+                if s[first] == s[second] == s[third] == mark:
+                    return True
     
-def print_board(b):
-    print("_______")
-    print("|" + b[0] + "|" + b[1] + "|" + b[2] + "|")
-    print("|" + b[3] + "|" + b[4] + "|" + b[5] + "|")
-    print("|" + b[6] + "|" + b[7] + "|" + b[8] + "|")
-    print("-------")
+            return False
+        
+        is_terminal = False
+        
+        if _at_least_one_line_is_full_with(state, CIRCLE):
+            end_condition = CIRCLE
+            is_terminal = True
+        elif _at_least_one_line_is_full_with(state, CROSS):
+            end_condition = CROSS
+            is_terminal = True
+        elif EMPTY not in state:
+            end_condition = DRAW
+            is_terminal = True
+        else:
+            end_condition = ONGOING
+        
+        return is_terminal, end_condition

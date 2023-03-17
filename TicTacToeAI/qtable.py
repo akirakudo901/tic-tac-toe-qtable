@@ -9,14 +9,14 @@ import time
 import numpy as np
 
 
-def log(Q, save_table=False, name=""):
+def log(Q, save_table=False, name=None):
     time_of_creation = time.localtime(time.time())[0:5]
     acc = str(time_of_creation[0])
     [acc := acc + "_" + str(x) for x in time_of_creation[1:5]]
     name_original = "Tictactoe_Q_table_" + acc
     
     if save_table is True:
-        if name == "":
+        if name == None:
             np.save(name_original, Q)
         else:
             np.save(name, Q)
