@@ -128,12 +128,75 @@ for i in range(epis):
     # env.render()
     probability -= (initial_probability / epis)
     epsilon -= (initial_epsilon / epis)
-    if in_printed_episode: print("The computer now takes random moves with probability", round(probability,3))
     if in_printed_episode: print("The AI now takes random actions with probability", round(epsilon, 3))
+    if in_printed_episode: print("The computer now takes random moves with probability", round(probability,3))
 
 #at the end of training
 print("Reward Sum on all episodes " + str(sum(rev_list)/epis))
 print("Final Values Q-Table")
 print(Q)
 
-qtable.log(Q)
+qtable.log(Q, save_table = True)
+
+#Evaluation of its performance: play against optimal minimax computer to draw n times in a row
+num_eval_game = 10000
+
+print("_____________EVALUATION!!!!____________")
+win_count = 0
+loss_count = 0
+draw_count = 0
+
+for i in range(num_eval_game):
+    in_printed_episode = (i % print_every_n_episodes == 0)
+
+    if in_printed_episode:
+        print("+++++++++++++++++++++++++++++++++")
+        print("=================================")
+        print("We are at episode", i, "!!!!!!!")
+        print("=================================")
+        print("+++++++++++++++++++++++++++++++++")
+    
+    s = env.reset()
+
+    for j in range(11): # a single game loop
+        if in_printed_episode: print("+++++++++++Next step+++++++++++")
+        
+        empty_spots = environment.Tictactoe.get_empty_squares(s)
+        if in_printed_episode: print("empty_spots", empty_spots)
+
+        s_num = qtable.state_to_number(s)
+        
+        if (j % 2 == 0): # if turn for the ai
+        
+            # AI plays optimally
+            if in_printed_episode: print("AI plays.")
+            state_wise_qtable = Q[s_num,:]
+            a = np.argmax(state_wise_qtable)
+            
+            if in_printed_episode: print("The action chosen by the AI is", a)
+        
+        else: # turn for the computer
+            # Minimax computer plays optimally
+            if in_printed_episode: print("Computer plays.")
+            a, _ = minimax_comp.action(s, p=0)
+
+            if in_printed_episode: print("The action chosen by the computer is", a)
+
+        # Update world accordingly
+        s1, r, d, _ = env.step(a)
+        s1_num = qtable.state_to_number(s1)
+        if in_printed_episode: print("State:", s1, "State Number:", s1_num, "Done:", d)
+        
+        # If it is over, track wins and losses
+        if d:
+            if (r == environment.REWARD_FOR_DRAW):
+                draw_count += 1
+            elif (r == environment.REWARD_FOR_WIN):
+                win_count += 1
+            elif (r == environment.REWARD_FOR_LOSS):
+                loss_count += 1
+            break
+
+        s = s1
+
+print("Result: win / loss / draw = ", win_count, loss_count, draw_count)

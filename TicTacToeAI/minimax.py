@@ -268,7 +268,7 @@ class Minimax_computer:
             is_random_choice = False
         return result, is_random_choice
 
-    def load(self, lookup_table="minimax_lookup_table_Tictactoe2022_1_18_11_0.json"):
+    def load(self, lookup_table=LOOKUP_TABLE_PATH):
         success = False
         while success == False:
             if not lookup_table.endswith(".json"):

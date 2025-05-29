@@ -48,7 +48,7 @@ class Tictactoe:
         return self.state
     
     @staticmethod
-    def simulate_step(state, action, 
+    def simulate_step(state, action, player_turn,
                       r_win=REWARD_FOR_WIN, r_loss=REWARD_FOR_LOSS, 
                       r_draw=REWARD_FOR_DRAW, r_error=REWARD_FOR_ERROR, 
                       r_ongoing=REWARD_FOR_ONGOING):
@@ -66,10 +66,10 @@ class Tictactoe:
             _, end_condition = Tictactoe.is_terminal(s)
             return end_condition
         
-        def _get_reward(turn, end_condition):
-            opponent_turn = CROSS if turn is CIRCLE else CIRCLE
+        def _get_reward(end_condition):
+            opponent_turn = CROSS if player_turn is CIRCLE else CIRCLE
             
-            if end_condition is turn:
+            if end_condition is player_turn:
                 return r_win
             elif end_condition is opponent_turn:
                 return r_loss
@@ -78,12 +78,10 @@ class Tictactoe:
             elif end_condition is ONGOING:
                 return r_ongoing
             
-        turn = Tictactoe.get_turn(state)
-
         if _chosen_square_is_empty():
             new_state = _update_state()
             end_condition = _get_end_condition(new_state)
-            reward = _get_reward(turn, end_condition)
+            reward = _get_reward(end_condition)
             done = (end_condition != ONGOING)
             return new_state, reward, done, end_condition 
             #observation; reward; done; end condition.
@@ -93,7 +91,7 @@ class Tictactoe:
 
 
     def step(self, action):
-        n_s, r, d, e_c = Tictactoe.simulate_step(self.state, action,
+        n_s, r, d, e_c = Tictactoe.simulate_step(self.state, action, self.ai_turn,
                                                 r_win=self.reward_for_win,   r_loss=self.reward_for_loss, 
                                                 r_draw=self.reward_for_draw, r_error=self.reward_for_error, 
                                                 r_ongoing=self.reward_when_not_done)

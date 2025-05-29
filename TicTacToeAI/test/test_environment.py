@@ -28,7 +28,7 @@ class TestTictactoe(unittest.TestCase):
 
     def test_get_empty_squares(self):
         actual = Tictactoe.get_empty_squares(self.s1)
-        self.assertEquals(list(range(9)), actual)
+        self.assertEqual(list(range(9)), actual)
         return
 
     def test_get_turn(self):
